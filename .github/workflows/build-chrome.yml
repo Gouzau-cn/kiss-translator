@@ -1,0 +1,109 @@
+name: Build Chrome preview
+
+on:
+  workflow_dispatch:
+    inputs:
+      target:
+        description: Build target
+        required: true
+        default: chrome
+        type: choice
+        options:
+          - chrome
+          - edge-dev
+          - firefox
+          - thunderbird
+          - web
+      package:
+        description: Create a zip artifact
+        required: false
+        default: true
+        type: boolean
+
+permissions:
+  contents: read
+
+concurrency:
+  group: build-preview-${{ github.ref_name }}
+  cancel-in-progress: true
+
+env:
+  CI: "true"
+  NODE_PATH: ${{ github.workspace }}/node_modules/.pnpm/node_modules
+
+jobs:
+  build:
+    name: Build preview (${{ inputs.target }})
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 9.14.4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - name: Build distribution
+        env:
+          BUILD_TARGET: ${{ inputs.target }}
+        run: pnpm exec zx src/scripts/build-task.mjs --target="$BUILD_TARGET"
+      - name: Build Edge package
+        if: inputs.target == 'chrome'
+        run: pnpm run build:edge
+      - name: Package preview
+        if: inputs.package == true
+        env:
+          BUILD_TARGET: ${{ inputs.target }}
+          REF_NAME: ${{ github.ref_name }}
+        shell: python
+        run: |
+          import hashlib
+          import json
+          import os
+          import subprocess
+          import zipfile
+          from pathlib import Path
+
+          target = os.environ["BUILD_TARGET"]
+          revision = subprocess.check_output(["git", "rev-parse", "HEAD"], text=True).strip()
+          version = json.loads(Path("package.json").read_text())["version"]
+          targets = ["chrome", "edge"] if target == "chrome" else ["userscript" if target == "web" else target]
+          output = Path("preview-artifacts")
+          output.mkdir()
+          checksums = []
+          for client in targets:
+              source = Path("build") / client
+              required = (
+                  ["kiss-translator.user.js", "kiss-translator-ios-safari.user.js"]
+                  if client == "userscript"
+                  else ["manifest.json", "popup.html", "options.html", "content.js", "background.js"]
+              )
+              for filename in required:
+                  if not (source / filename).is_file():
+                      raise SystemExit(f"Missing {client} artifact: {filename}")
+              archive = output / f"kiss-translator-{version}-{revision[:8]}-{client}.zip"
+              with zipfile.ZipFile(archive, "w", zipfile.ZIP_DEFLATED) as bundle:
+                  for file in sorted(source.rglob("*")):
+                      if file.is_file():
+                          bundle.write(file, file.relative_to(source))
+              checksums.append(f"{hashlib.sha256(archive.read_bytes()).hexdigest()}  {archive.name}")
+          (output / "SHA256SUMS.txt").write_text("\n".join(checksums) + "\n")
+          (output / "BUILD_INFO.json").write_text(json.dumps({
+              "revision": revision,
+              "version": version,
+              "targets": targets,
+              "ref": os.environ["REF_NAME"],
+          }, indent=2) + "\n")
+      - name: Upload preview artifact
+        if: inputs.package == true
+        uses: actions/upload-artifact@v4
+        with:
+          name: chrome-preview-${{ github.run_number }}
+          path: preview-artifacts/
+          if-no-files-found: error
+          retention-days: 14
