@@ -1,5 +1,6 @@
 # 文档目录
 
+- [项目结构说明](../PROJECT_STRUCTURE.md)：目录地图、入口与构建目标、核心运行链路、常见改动指引。
 - [提示词执行规则](prompt-template-contract.md)：显式占位符、空模板与兼容变化。
 - [插件开发指南](https://github.com/fishjar/kiss-translator-plugins/blob/main/docs/plugin-development-guide.md)：当前插件契约与开发流程。
 - [OpenAI 兼容协议插件](https://github.com/fishjar/kiss-translator-plugins/blob/main/plugins/openai-compatible-bundle/README.md)：聊天、翻译、转写、语音与图片识别。
