@@ -839,9 +839,9 @@ describe("useSelectionController", () => {
     expect(controller.setBoxPosition).toHaveBeenCalledTimes(1);
     expect(controller.setBoxPosition).toHaveBeenLastCalledWith({
       x: 20,
-      // Selection top 420 - outer height (200 + TRANBOX_CHROME_HEIGHT 74) - boxOffsetY 10.
+      // Selection top 420 - outer height (200 + TRANBOX_CHROME_HEIGHT 68) - boxOffsetY 10.
       // Update this expectation when the constant in tranboxPosition.js changes.
-      y: 136,
+      y: 142,
     });
 
     act(() => {
