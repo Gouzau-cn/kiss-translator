@@ -117,86 +117,89 @@ afterEach(() => {
   document.body.innerHTML = "";
 });
 
-describe("通用组件化自定义标签容器与还原防泄漏测试（全局默认 autoScan: true，无专属规则）", () => {
-  const fullHtmlPath = path.resolve(__dirname, "../../tmp/bgg_full.html");
-  let sampleHtml = "";
-  if (fs.existsSync(fullHtmlPath)) {
-    sampleHtml = fs.readFileSync(fullHtmlPath, "utf8");
+const fullHtmlPath = path.resolve(__dirname, "../../tmp/bgg_full.html");
+const sampleHtml = fs.existsSync(fullHtmlPath)
+  ? fs.readFileSync(fullHtmlPath, "utf8")
+  : "";
+// 本地样本文件被 .gitignore 排除；CI 无该文件时跳过整组依赖真实页面结构的测试。
+const describeWithSample = sampleHtml ? describe : describe.skip;
+describeWithSample(
+  "通用组件化自定义标签容器与还原防泄漏测试（全局默认 autoScan: true，无专属规则）",
+  () => {
+    test("1. 目标选取验证: 即使自定义组件默认 display 为 inline，包含块级子节点时不吞噬外层结构容器", () => {
+      document.documentElement.innerHTML = sampleHtml;
+      // 使用纯全局默认规则
+      const translator = createTranslator({ transOpen: "false" });
+      const targets = translator.previewRule().targets;
+
+      // 找到所有包含主帖正文的 target
+      const contentTargets = targets.filter((t) =>
+        t.textContent.includes("Do you think there will be a pdf")
+      );
+
+      // 必须穿透定位至正文叶子组件，不把外层容器当叶子文本块
+      expect(contentTargets.length).toBe(1);
+      expect(contentTargets[0].tagName.toLowerCase()).toBe("gg-markup-content");
+      expect(contentTargets[0].textContent).not.toContain("User actions menu");
+      expect(contentTargets[0].textContent).not.toContain("peterc1985");
+    });
+
+    test("2. 还原防泄漏验证: 关闭翻译或还原时，正文中绝无残留 loading 图标", async () => {
+      jest.useFakeTimers();
+      document.documentElement.innerHTML = sampleHtml;
+
+      // 模拟在途请求（保持 loading 状态）
+      apiTranslate.mockImplementation(() => new Promise(() => {}));
+
+      const translator = createTranslator({ transOnly: "true" });
+      await flushAsync();
+
+      const markupContent = document.querySelector("gg-markup-content");
+      expect(markupContent).toBeDefined();
+
+      // 触发还原
+      translator.stop();
+      await flushAsync();
+
+      // 验证正文完全还原为纯净原文，没有任何残余 loading 或 kiss-warpper 容器
+      const wrappers = markupContent.querySelectorAll(
+        `.${Translator.KISS_CLASS.warpper}`
+      );
+      expect(wrappers.length).toBe(0);
+      const residualSvgTags = markupContent.querySelectorAll("svg");
+      expect(residualSvgTags.length).toBe(0);
+      expect(markupContent.textContent).toContain("Hey all!");
+    });
+
+    test("3. 双语对照模式与仅译文模式验证: 全文不产生多余大块译文堆积", async () => {
+      jest.useFakeTimers();
+      document.documentElement.innerHTML = sampleHtml;
+
+      apiTranslate.mockImplementation(({ text }) =>
+        Promise.resolve({ targetText: "【译】" + text })
+      );
+
+      const translator = createTranslator({ transOnly: "false" });
+      await flushAsync();
+
+      // 检查发起的翻译请求
+      const calls = apiTranslate.mock.calls.map((c) => c[0]?.text || "");
+      // 断言发起的请求中绝对没有包含全贴所有楼层合并的大文本（全贴长达 2000+ 字符）
+      const giantMergedCalls = calls.filter(
+        (text) =>
+          text.includes("peterc1985") &&
+          text.includes("Hey all!") &&
+          text.includes("User actions menu")
+      );
+      expect(giantMergedCalls.length).toBe(0);
+
+      // 验证正文已被识别并翻译
+      const contentCalls = calls.filter(
+        (text) =>
+          text.includes("Do you think there will be a pdf") ||
+          text.includes("Hey all!")
+      );
+      expect(contentCalls.length).toBeGreaterThan(0);
+    });
   }
-
-  test("1. 目标选取验证: 即使自定义组件默认 display 为 inline，包含块级子节点时不吞噬外层结构容器", () => {
-    document.documentElement.innerHTML = sampleHtml;
-    // 使用纯全局默认规则
-    const translator = createTranslator({ transOpen: "false" });
-    const targets = translator.previewRule().targets;
-
-    // 找到所有包含主帖正文的 target
-    const contentTargets = targets.filter((t) =>
-      t.textContent.includes("Do you think there will be a pdf")
-    );
-
-    // 必须穿透定位至正文叶子组件，不把外层容器当叶子文本块
-    expect(contentTargets.length).toBe(1);
-    expect(contentTargets[0].tagName.toLowerCase()).toBe("gg-markup-content");
-    expect(contentTargets[0].textContent).not.toContain("User actions menu");
-    expect(contentTargets[0].textContent).not.toContain("peterc1985");
-  });
-
-  test("2. 还原防泄漏验证: 关闭翻译或还原时，正文中绝无残留 loading 图标", async () => {
-    jest.useFakeTimers();
-    document.documentElement.innerHTML = sampleHtml;
-
-    // 模拟在途请求（保持 loading 状态）
-    apiTranslate.mockImplementation(() => new Promise(() => {}));
-
-    const translator = createTranslator({ transOnly: "true" });
-    await flushAsync();
-
-    const markupContent = document.querySelector("gg-markup-content");
-    expect(markupContent).toBeDefined();
-
-    // 触发还原
-    translator.stop();
-    await flushAsync();
-
-    // 验证正文完全还原为纯净原文，没有任何残余 loading 或 kiss-warpper 容器
-    const wrappers = markupContent.querySelectorAll(
-      `.${Translator.KISS_CLASS.warpper}`
-    );
-    expect(wrappers.length).toBe(0);
-    const residualSvgTags = markupContent.querySelectorAll("svg");
-    expect(residualSvgTags.length).toBe(0);
-    expect(markupContent.textContent).toContain("Hey all!");
-  });
-
-  test("3. 双语对照模式与仅译文模式验证: 全文不产生多余大块译文堆积", async () => {
-    jest.useFakeTimers();
-    document.documentElement.innerHTML = sampleHtml;
-
-    apiTranslate.mockImplementation(({ text }) =>
-      Promise.resolve({ targetText: "【译】" + text })
-    );
-
-    const translator = createTranslator({ transOnly: "false" });
-    await flushAsync();
-
-    // 检查发起的翻译请求
-    const calls = apiTranslate.mock.calls.map((c) => c[0]?.text || "");
-    // 断言发起的请求中绝对没有包含全贴所有楼层合并的大文本（全贴长达 2000+ 字符）
-    const giantMergedCalls = calls.filter(
-      (text) =>
-        text.includes("peterc1985") &&
-        text.includes("Hey all!") &&
-        text.includes("User actions menu")
-    );
-    expect(giantMergedCalls.length).toBe(0);
-
-    // 验证正文已被识别并翻译
-    const contentCalls = calls.filter(
-      (text) =>
-        text.includes("Do you think there will be a pdf") ||
-        text.includes("Hey all!")
-    );
-    expect(contentCalls.length).toBeGreaterThan(0);
-  });
-});
+);
