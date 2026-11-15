@@ -23,7 +23,8 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
-          ref: ${{ github.event.pull_request.head.sha }}
+          # Review base: test the PR merge commit so the base branch's CI
+          # baseline fixes are included without polluting the feature branch.
           persist-credentials: false
       - uses: pnpm/action-setup@v4
         with:
@@ -47,7 +48,8 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
-          ref: ${{ github.event.pull_request.head.sha }}
+          # Review base: test the PR merge commit so the base branch's CI
+          # baseline fixes are included without polluting the feature branch.
           persist-credentials: false
       - uses: pnpm/action-setup@v4
         with:
