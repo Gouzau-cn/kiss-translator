@@ -88,6 +88,7 @@ test("PaddleOCR exposes exactly one capability per model", async () => {
     model: "PaddleOCR-VL-1.6",
   });
   expect(Object.keys(vlm)).toEqual(["parseImage"]);
+  // Markdown 回退结果没有坐标，因此能力层面不宣告坐标。
   expect(vlm.parseImage.coordinates).toBe(false);
   expect(vlm.parseImage.taskModes).toEqual(["doc"]);
 
