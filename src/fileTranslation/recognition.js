@@ -1,4 +1,5 @@
 import {
+  isApiConfigured,
   supportedApiFeature,
   supportsApiCapability,
 } from "../config/serviceSelection";
@@ -34,6 +35,8 @@ export function recognitionOptions(
     options.push({ groupLabel: capability === "parseImage" ? "VLM" : "OCR" });
     for (const api of entries) {
       const feature = recognitionFeature(api, capability);
+      // 网络服务（如 PaddleOCR）缺少 Token 时仍展示在列表中，但标记为当前不可用。
+      const unavailable = feature.available === false || !isApiConfigured(api);
       options.push({
         value: JSON.stringify({ apiSlug: api.apiSlug, capability }),
         label: `${api.apiName || api.apiSlug} · ${
@@ -41,9 +44,7 @@ export function recognitionOptions(
             ? i18n("recognition_with_coordinates", "带文字坐标")
             : i18n("recognition_text_only", "仅文本输出")
         }${
-          feature.available === false
-            ? ` (${i18n("api_unavailable_here", "当前不可用")})`
-            : ""
+          unavailable ? ` (${i18n("api_unavailable_here", "当前不可用")})` : ""
         }`,
       });
     }

@@ -30,6 +30,10 @@ export const GEMINI_GENERATE_CONTENT_URL = `https://generativelanguage.googleapi
 export const GEMINI_INTERACTIONS_URL =
   "https://generativelanguage.googleapis.com/v1/interactions";
 
+// PaddleOCR 官方异步 API 的源域名。该网关会拒绝带跨域 Origin 的浏览器请求，
+// 需要通过 DNR 将 Origin 伪造成同源。
+export const PADDLEOCR_ORIGIN = "https://paddleocr.aistudio-app.com";
+
 // --- 划词翻译词典服务商 ---
 // export const OPT_DICT_BAIDU = "Baidu";
 export const OPT_DICT_BING = "Bing"; // 必应词典
@@ -66,6 +70,7 @@ export const OPT_TRANS_DEEPLFREE = "DeepLFree"; // DeepL 免费网页翻译接�
 export const OPT_TRANS_EPHONEAI = "ePhoneAI"; // ePhone AI 翻译服务
 export const OPT_TRANS_APIMART = "APIMart"; // APIMart 翻译服务
 export const OPT_TRANS_BAIDU = "Baidu"; // 百度翻译 API
+export const OPT_TRANS_PADDLEOCR = "PaddleOCR"; // PaddleOCR 官方异步 API（AI Studio 免费层：文字 OCR / VLM / 结构解析）
 export const OPT_TRANS_TENCENT = "Tencent"; // 腾讯翻译君 API
 export const OPT_TRANS_VOLCENGINE = "Volcengine"; // 火山翻译 API
 export const OPT_TRANS_YANDEX = "Yandex"; // Yandex Cloud Translate API
@@ -106,6 +111,7 @@ export const OPT_ALL_TRANS_TYPES = [
   OPT_TRANS_VOLCENGINE,
   OPT_TRANS_YANDEX,
   OPT_TRANS_YANDEXFREE,
+  OPT_TRANS_PADDLEOCR,
   OPT_TRANS_DEEPL,
   OPT_TRANS_DEEPLFREE,
   OPT_TRANS_DEEPLX,
