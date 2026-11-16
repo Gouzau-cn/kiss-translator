@@ -1,7 +1,7 @@
 # KISS Translator 项目结构说明
 
 > 本文件是仓库的「结构索引」，用于快速定位代码与理解模块边界。
-> 生成日期：2026-11-15；对应 `fix/paddleocr-origin` 分支提交 `ec7fabe9`，版本 `2.2.4`。
+> 生成日期：2026-11-16；对应 `fix/paddleocr-origin` 分支（PaddleOCR 改为接口插件接入），版本 `2.2.4`。
 > 目录、入口或构建目标发生变化时，请同步更新本文件。
 
 ## 1. 项目速览
@@ -19,7 +19,7 @@
 | 运行环境 | Node.js >= 20（推荐 22/24），pnpm >= 9 |
 | 代码规模 | `src/` 约 1150 个文件，测试文件与实现文件基本一一对应 |
 
-核心能力：整页双语翻译、划词/查词/悬停/输入框翻译、多服务对比的独立窗口、YouTube 双语字幕与 ASR、接口插件体系、PaddleOCR 官方异步 OCR、端侧本地 AI（LLM/VLM/OCR/ASR/TTS/版面分析/JEV）、文件翻译（TXT/Markdown/PDF/EPUB/图片）、KISS-Worker / WebDAV / GitHub Gist 同步。
+核心能力：整页双语翻译、划词/查词/悬停/输入框翻译、多服务对比的独立窗口、YouTube 双语字幕与 ASR、接口插件体系（含 PaddleOCR 官方异步 OCR/文档解析插件）、端侧本地 AI（LLM/VLM/OCR/ASR/TTS/版面分析/JEV）、文件翻译（TXT/Markdown/PDF/EPUB/图片）、KISS-Worker / WebDAV / GitHub Gist 同步。
 
 ## 2. 我想改 X，该看哪里
 
@@ -81,7 +81,7 @@ kiss-translator/
 | --- | --- | --- | --- |
 | 根入口 | 各运行环境的启动入口与共享启动流程 | `background.js`、`content.js`、`common.js`、`options.js`、`popup.js`、`userscript.js`、`fileTranslate.js`、`fileBridge.js`、`injector-*.js`、`subtitleBootstrap.js` | 19 个顶层文件 |
 | `apis/` | 翻译/词典/字幕/视觉请求调度；批量、缓存、流式、历史 | `index.js`、`trans.js`、`vision.js`、`history.js` | 26 |
-| `builtin-plugins/` | 内置服务实现与能力契约（Google、DeepL、OpenAI、Claude、Gemini、百度、腾讯、火山、Yandex、Ollama、PaddleOCR、本地 AI 等） | `definitions.js`（能力矩阵）、`runtime.js`（注册）、`presets.js`、`fields.js`、`paddleocr.js`、`local.js` | 55 |
+| `builtin-plugins/` | 内置服务实现与能力契约（Google、DeepL、OpenAI、Claude、Gemini、百度、腾讯、火山、Yandex、Ollama、本地 AI 等） | `definitions.js`（能力矩阵）、`runtime.js`（注册）、`presets.js`、`fields.js`、`local.js` | 55 |
 | `components/` | 跨页面复用 UI | `TranslationPanel/`、`FloatingButton`、`TerminologySelect`、`TouchTranslateControl` | 23 |
 | `config/` | 常量与默认值：API 类型、默认设置、存储键、消息、提示词、多语言字典 | `index.js`（统一导出）、`api.js`、`apiConstants.js`、`setting.js`、`storage.js`、`msg.js`、`prompt.js`、`locales/` | 48 |
 | `fileTranslation/` | 文件翻译协议、Web 端 client、扩展端 backend、图片流水线、结果缓存 | `protocol.js`、`client.js`、`backend.js`、`pipelineCore.js`、`resultCache.js` | 16 |
@@ -210,7 +210,7 @@ kiss-translator/
 - `updateCspRules()`（`src/background.js`）维护两类 `declarativeNetRequest` 动态规则：CSP 段 ID `1..9999`（`CSP_RULE_START_ID`），Origin 段 ID `≥10000`（`ORI_RULE_START_ID`）。
 - **CSP**：对配置站点的 `main_frame`/`sub_frame` 响应移除 `Content-Security-Policy*` 头。
 - **Origin**：对配置域名且仅由扩展自身发起的 `xmlhttprequest`（`initiatorDomains: [EXTENSION_INITIATOR_DOMAIN]`）把请求头 `Origin` 设为该域名，伪装同源。
-- `src/libs/originRules.js` 的 `normalizeOriginRewriteList()` 负责按逗号/换行拆分、trim、去重，并**始终追加** `PADDLEOCR_ORIGIN`（`https://paddleocr.aistudio-app.com`）。PaddleOCR 官方异步 API 网关会拒绝带跨域 Origin 的浏览器请求（403、空响应），所以这一组规则每次都要重建，不能依赖用户 `orilist` 是否包含该域名。
+- `src/libs/originRules.js` 的 `normalizeOriginRewriteList()` 负责按逗号/换行拆分、trim、去重，并**始终追加** `PADDLEOCR_ORIGIN`（`https://paddleocr.aistudio-app.com`）。PaddleOCR 官方异步 API 网关会拒绝带跨域 Origin 的浏览器请求（403、空响应），因此默认 Origin 规则始终包含该域名。`updateCspRules()` 只在消息携带 `orilist` 时重建这组规则，单独修改 CSP 列表不会清空用户已有的 Origin 配置。
 - 选项页修改 `csplist`/`orilist` 时通过 `MSG_UPDATE_CSP` 触发；旧版 Firefox 不支持动态规则时在 `catch` 中降级，仅失去 CSP/Origin 改写能力。
 
 ## 8. 关键机制与约定

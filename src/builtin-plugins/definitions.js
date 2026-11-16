@@ -238,14 +238,6 @@ const contracts = {
     stream: false,
     usesMessages: false,
   },
-  // PaddleOCR 官方异步 API：模型决定实际能力（文字识别 / VLM 解析 / 结构分析），
-  // 具体暴露哪一种由 resolveBuiltinCapabilities 按 model 收窄。
-  PaddleOCR: {
-    names: ["recognizeText", "parseImage", "analyzeLayout"],
-    batch: false,
-    stream: false,
-    usesMessages: false,
-  },
 };
 
 export const builtinServiceDefinitions = Object.fromEntries(

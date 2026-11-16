@@ -2,7 +2,6 @@ import {
   OPT_TRANS_BUILTINAI,
   OPT_TRANS_SYSTEM_TTS,
   OPT_TRANS_LOCALAI,
-  OPT_TRANS_PADDLEOCR,
 } from "./apiConstants";
 import {
   PROVIDER_CAPABILITIES,
@@ -59,10 +58,7 @@ export const supportsVlmApi = (api) => supportsApiCapability(api, "parseImage");
 /** Readiness is separate from support: an incomplete instance remains fully editable. */
 export function isApiConfigured(api) {
   if (!api?.provider || api.provider.implementation?.kind === "native")
-    return (
-      api?.apiType !== OPT_TRANS_PADDLEOCR ||
-      Boolean(String(api.key || "").trim())
-    );
+    return true;
   try {
     validateServiceConfig(
       api.provider,

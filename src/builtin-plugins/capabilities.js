@@ -1,12 +1,7 @@
 import { getBuiltinServiceDefinition } from "./definitions";
 import localModelTasks from "../config/localModelTasks.json";
-import {
-  OPT_TRANS_LOCALAI,
-  OPT_TRANS_GEMINI,
-  OPT_TRANS_PADDLEOCR,
-} from "../config/apiConstants";
+import { OPT_TRANS_LOCALAI, OPT_TRANS_GEMINI } from "../config/apiConstants";
 import { isGeminiInteractionsUrl } from "./thinkingCapabilities";
-import { paddleOcrCapability } from "./paddleocrModels";
 
 /** Shared model intersection for actual invocation and capability test choices. */
 export function resolveBuiltinCapabilities(api) {
@@ -17,30 +12,6 @@ export function resolveBuiltinCapabilities(api) {
   let capabilities = JSON.parse(JSON.stringify(definition.capabilities));
   if (api.apiType === OPT_TRANS_GEMINI && isGeminiInteractionsUrl(api.url))
     delete capabilities.parseImage;
-  if (api.apiType === OPT_TRANS_PADDLEOCR) {
-    // 同一服务实例的模型决定唯一能力：
-    // PP-OCRv* -> recognizeText；PaddleOCR-VL* -> parseImage；PP-StructureV3 -> analyzeLayout。
-    const selected = paddleOcrCapability(api.model);
-    capabilities = Object.fromEntries(
-      Object.entries(capabilities)
-        .filter(([name]) => name === selected)
-        .map(([name, descriptor]) => [
-          name,
-          {
-            ...descriptor,
-            outputModes: ["complete"],
-            ...(name === "recognizeText" && { coordinates: true }),
-            ...(name === "parseImage" && {
-              // VLM 的 prunedResult.parsing_res_list 带 block_bbox，
-              // 可据此回填译文、支持区域选择与译图合成。
-              coordinates: true,
-              // 官方 VLM 解析一次输出整页内容，不支持按表格/公式任务模式切换。
-              taskModes: ["doc"],
-            }),
-          },
-        ])
-    );
-  }
   if (api.apiType === OPT_TRANS_LOCALAI) {
     const task = localModelTasks.models[api.modelRef];
     const ocr = localModelTasks.ocrGroups.some(
