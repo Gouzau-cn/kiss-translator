@@ -82,7 +82,6 @@ import Box from "@mui/material/Box";
 import ReusableAutocomplete from "./ReusableAutocomplete";
 import LocalModelSelect from "./LocalModelSelect";
 import ShowMoreButton from "./ShowMoreButton";
-import PaddleOcrFields from "./PaddleOcrFields";
 import {
   OPT_TRANS_DEEPLX,
   // OPT_TRANS_OLLAMA,
@@ -92,7 +91,6 @@ import {
   OPT_TRANS_BUILTINAI,
   OPT_TRANS_QWENMT,
   OPT_TRANS_YANDEX,
-  OPT_TRANS_PADDLEOCR,
   OPT_TRANS_OPENROUTER,
   OPT_TRANS_GEMINI,
   OPT_TRANS_GEMINI_2,
@@ -934,51 +932,23 @@ function LegacyApiFields({
                   multiline={apiType === OPT_TRANS_DEEPLX}
                   maxRows={10}
                   helperText={
-                    apiType === OPT_TRANS_DEEPLX
-                      ? i18n("mulkeys_help")
-                      : apiType === OPT_TRANS_PADDLEOCR
-                        ? i18n(
-                            "paddleocr_url_hint",
-                            "官方免费接口：https://paddleocr.aistudio-app.com/api/v2/ocr/jobs"
-                          )
-                        : ""
+                    apiType === OPT_TRANS_DEEPLX ? i18n("mulkeys_help") : ""
                   }
                 />
                 <SensitiveTextField
                   size="small"
                   sx={{ gridColumn: "1 / -1" }}
                   fullWidth
-                  label={
-                    apiType === OPT_TRANS_PADDLEOCR
-                      ? i18n("paddleocr_access_token", "Access Token")
-                      : "Key"
-                  }
+                  label={"Key"}
                   name="key"
                   value={key}
                   onChange={handleChange}
                   multiline={API_SPE_TYPES.mulkeys.has(apiType)}
                   maxRows={10}
-                  helperText={
-                    apiType === OPT_TRANS_PADDLEOCR
-                      ? i18n(
-                          "paddleocr_key_hint",
-                          "填入 AI Studio Access Token，请求会自动使用 Bearer 认证。"
-                        )
-                      : keyHelper
-                  }
+                  helperText={keyHelper}
                 />
               </>
             )}
-
-          {apiType === OPT_TRANS_PADDLEOCR && (
-            <PaddleOcrFields
-              api={activeFormData}
-              i18n={i18n}
-              onChange={(name, value) =>
-                handleChange({ target: { name, value } })
-              }
-            />
-          )}
 
           {apiType === OPT_TRANS_AZUREAI && (
             <TextField
@@ -1000,7 +970,7 @@ function LegacyApiFields({
             />
           )}
 
-          {!hasModelSelector && apiType !== OPT_TRANS_PADDLEOCR && (
+          {!hasModelSelector && (
             <CapabilityOptions
               api={activeFormData}
               onChange={(value) =>
@@ -1328,7 +1298,7 @@ function LegacyApiFields({
                   </TextField>
                 </Box>
               )}
-              {hasVlm && apiType !== OPT_TRANS_PADDLEOCR && (
+              {hasVlm && (
                 <Box>
                   <TextField
                     select
