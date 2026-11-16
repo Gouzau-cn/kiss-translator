@@ -5,6 +5,8 @@
 - [插件开发指南](https://github.com/fishjar/kiss-translator-plugins/blob/main/docs/plugin-development-guide.md)：当前插件契约与开发流程。
 - [OpenAI 兼容协议插件](https://github.com/fishjar/kiss-translator-plugins/blob/main/plugins/openai-compatible-bundle/README.md)：聊天、翻译、转写、语音与图片识别。
 - [DeepSeek 插件](https://github.com/fishjar/kiss-translator-plugins/blob/main/plugins/deepseek/README.md)：聊天、翻译与声明式协议规则。
+- [PaddleOCR 插件](https://github.com/Gouzau-cn/kiss-translator-plugins/tree/main/plugins/paddleocr)：官方异步 API 的文字识别（带文字行坐标）与文档解析接口插件。
+- [PaddleOCR 插件化迁移记录](PADDLEOCR_PLUGIN_MIGRATION.md)：主仓库移除原生 provider、插件接入与 CI 状态。
 
 插件源码、开发指引、供应商协议测试和发布流程统一维护在[官方插件项目](https://github.com/fishjar/kiss-translator-plugins)。该项目独立打包并发布版本化 ZIP 和目录索引；主项目仅使用通用测试样例验证 SDK，不保存官方发布包、目录或哈希快照。插件可从“接口插件 → 官方插件”联网安装，或下载独立 ZIP 后导入。
 
